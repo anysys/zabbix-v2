@@ -189,18 +189,13 @@
           },
           "addressPrefix":{
             "value":"[parameters('addressPrefix')]"
-          },
-          //###############
+          },          
           "subnetName": {
             "value": "[parameters('subnetName')]"
           },
-          //##################
-          "subnetPrefix": {
-            
+          "subnetPrefix": {          
             "value": "[parameters('subnetPrefix')]"
-    
           },
-          //###############
           "vmName": {
             "value": "[parameters('monitorVmName')]"
           },
