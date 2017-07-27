@@ -197,11 +197,11 @@
     },
     "storageAccountName": {
       "type": "string",
-      "value": "[providers('Microsoft.Storage','storageAccounts')]"
+      "value": "[variables('storageAccountName')]"
     },
     "virtualNetworkName": {
       "type": "string",
-      "value": "[providers('Microsoft.Network','virtualNetworks')]"
+      "value": "[variables('virtualNetworkName')]"
     }
   }
 }

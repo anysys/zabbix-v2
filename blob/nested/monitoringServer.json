@@ -2,6 +2,32 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed."
+      }
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Unique vnet name the monitor VM connects to."
+      }
+    },
+    "addressPrefix": {
+      "type": "string",
+      "defaultValue": "192.168.0.0/16",
+      "metadata": {
+        "description": "The network address space for the virtual network"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "The subnet name the monitor VM connects to, also agents will also be installed on those VMs."
+      },
+      "defaultValue": "default"
+    },
     "vmName": {
       "type": "string",
       "metadata": {
@@ -101,17 +127,6 @@
         "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
       },
       "defaultValue": "https://raw.githubusercontent.com/anysys/zabbix-v2/master/blob/"
-    },
-	"zabbixstorageType": {
-      "type": "string",
-      "defaultValue": "Standard_LRS",
-      "allowedValues": [
-        "Standard_LRS",
-        "Standard_ZRS",
-        "Standard_GRS",
-        "Standard_RAGRS",
-        "Premium_LRS"
-      ]
     }
   },
   "variables": {
@@ -121,108 +136,82 @@
     "nicName": "[concat(parameters('vmName'),'nic')]",
     "publicIPAddressName": "[concat(parameters('vmName'),'ip')]",
     "publicIPAddressType": "Dynamic",
-    "storageAccountName": "[parameters('existingStorageAccountName')]",
+    "storageAccountName": "[parameters('storageAccountName')]",
     "vmStorageAccountContainerName": "vhds",
     "vmName": "[parameters('vmName')]",
     "vmSize": "[parameters('vmSize')]",
-    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('existingVirtualNetworkName'))]",
-    "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('existingSubnetName'))]",
-    "singleQuote": "'",
-	"zabbixstorageName": "[concat('zabbixstorage', uniqueString(resourceGroup().id))]",
-	"zabbixvnet":"zabbixvnet",
-    "zabbixvnetPrefix": "192.168.0.0/16",
-    "zabbixvnetSubnet1Name": "Subnet-1",
-    "zabbixvnetSubnet1Prefix": "192.168.0.0/24",
-	"zabbixvmVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'zabbixvnet')]",
-    "zabbixvmSubnetRef": "[concat(variables('zabbixvmVnetID'), '/subnets/', variables('zabbixvnetSubnet1Name'))]",
-	"zabbixvmOSDiskName": "zabbixvmOSDisk",
-    "zabbixvmStorageAccountContainerName": "vhds",
-    "zabbixvmNicName": "[concat(parameters('zabbixvmName'), 'NetworkInterface')]",
-    "zabbixpipName": "zabbixpip"
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
+    "singleQuote": "'"
   },
   "resources": [
+    //#####################新建存储和网络###############################
     {
-      "name": "[variables('zabbixstorageName')]",
       "type": "Microsoft.Storage/storageAccounts",
+      "name": "[parameters('storageAccountName')]",
+      "apiVersion": "[variables('apiVersion')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "2016-01-01",
-      "sku": {
-        "name": "[parameters('zabbixstorageType')]"
-      },
-      "dependsOn": [ ],
-      "tags": {
-        "displayName": "zabbixstorage"
-      },
-      "kind": "Storage"
+      "properties": {
+        "accountType": "Standard_LRS"
+      }
     },
     {
-      "name": "[variables('zabbixvnet')]",
+      "apiVersion": "[variables('apiVersion')]",
       "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('virtualNetworkName')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "2016-03-30",
-      "dependsOn": [],
-      "tags": {
-        "displayName": "zabbixvnet"
-      },
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('zabbixvnetPrefix')]"
+            "[parameters('addressPrefix')]"
           ]
         },
         "subnets": [
           {
-            "name": "[variables('zabbixvnetSubnet1Name')]",
+            "name": "[parameters('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('zabbixvnetSubnet1Prefix')]"
+              "addressPrefix": "[parameters('subnetPrefix')]"
             }
           }
         ]
       }
     },
+    //#############################################################
     {
-      "name": "[variables('zabbixvmNicName')]",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('vmName')]"
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/networkInterfaces",
-      "location": "[resourceGroup().location]",
-      "apiVersion": "2016-03-30",
+      "name": "[variables('nicName')]",
+      "location": "[variables('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', 'zabbixvnet')]",
-        "[resourceId('Microsoft.Network/publicIPAddresses', variables('zabbixpipName'))]"
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
       ],
-      "tags": {
-        "displayName": "zabbixvmNic"
-      },
       "properties": {
         "ipConfigurations": [
           {
             "name": "ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('zabbixvmSubnetRef')]"
-              },
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('zabbixpipName'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses/',variables('publicIPAddressName'))]"
+              },
+              "subnet": {
+                "id": "[variables('subnetRef')]"
               }
             }
           }
         ]
-      }
-    },
-    {
-      "name": "[variables('zabbixpipName')]",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "location": "[resourceGroup().location]",
-      "apiVersion": "2016-03-30",
-      "dependsOn": [ ],
-      "tags": {
-        "displayName": "zabbixpip"
-      },
-      "properties": {
-        "publicIPAllocationMethod": "Dynamic",
-        "dnsSettings": {
-          "domainNameLabel": "[parameters('zabbixpipDnsName')]"
-        }
       }
     },
     {
@@ -231,8 +220,7 @@
       "name": "[variables('vmName')]",
       "location": "[variables('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('zabbixstorageName'))]",
-        "[resourceId('Microsoft.Network/networkInterfaces', variables('zabbixvmNicName'))]"
+        "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -243,10 +231,10 @@
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
-		"storageProfile": {
+        "storageProfile": {
           "osDisk": {
             "vhd": {
-              "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('zabbixstorageName')), '2016-01-01').primaryEndpoints.blob, variables('zabbixvmStorageAccountContainerName'), '/', variables('zabbixvmOSDiskName'), '.vhd')]"
+              "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/',variables('storageAccountName')), '2015-06-15').primaryEndpoints.blob,variables('vmStorageAccountContainerName'),'/',variables('OSDiskName'),'.vhd')]"
             },
             "name": "osdisk",
             "caching": "ReadWrite",
@@ -257,7 +245,7 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('zabbixvmNicName'))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName')))]"
             }
           ]
         }
