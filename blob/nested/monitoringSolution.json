@@ -3,8 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "storageAccountName": {
-      "type": "string",
-      "defaultValue": "Standard_LRS",
+      "type": "string",  
       "metadata": {
         "description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed."
       }
