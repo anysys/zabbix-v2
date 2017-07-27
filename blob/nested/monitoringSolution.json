@@ -4,6 +4,7 @@
   "parameters": {
     "storageAccountName": {
       "type": "string",
+      "defaultValue": "Standard_LRS",
       "metadata": {
         "description": "Unique namespace for the Storage Account where the Virtual Machine's disks will be placed."
       }
