@@ -144,8 +144,7 @@
     "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('subnetName'))]",
     "singleQuote": "'"
   },
-  "resources": [
-    //#####################新建存储和网络###############################
+  "resources": [    
     {
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[parameters('storageAccountName')]",
@@ -176,7 +175,6 @@
         ]
       }
     },
-    //#############################################################
     {
       "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/publicIPAddresses",
