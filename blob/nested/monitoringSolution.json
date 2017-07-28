@@ -12,7 +12,8 @@
       "type": "string",
       "metadata": {
         "description": "Unique vnet name the monitor VM connects to."
-      }
+      },
+      "defaultValue": "Myvnet"
     },
     "subnetName": {
       "type": "string",
