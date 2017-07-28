@@ -182,18 +182,9 @@
         "parameters": {
           "storageAccountName": {
             "value": "[parameters('storageAccountName')]"
-          },
-          "virtualNetworkName": {
-            "value": "[parameters('virtualNetworkName')]"
-          },
-           "addressPrefix": {
-           "value": "[parameters('addressPrefix')]"
-          },
+          },     
           "subnetName": {
             "value": "[parameters('subnetName')]"
-          },
-          "subnetPrefix": {
-          "value": "[parameters('subnetPrefix')]"
           },
           "vmName": {
             "value": "[parameters('monitorVmName')]"
