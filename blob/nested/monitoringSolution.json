@@ -182,7 +182,10 @@
         "parameters": {
           "storageAccountName": {
             "value": "[parameters('storageAccountName')]"
-          },     
+          },
+          "virtualNetworkName": {
+            "value": "[parameters('virtualNetworkName')]"
+          },  
           "subnetName": {
             "value": "[parameters('subnetName')]"
           },
